@@ -137,7 +137,7 @@ router.post(
         status: 'pending',
       });
       
-      console.log('Created booking:', booking);
+      // console.log('Created booking:', booking);
       
       res.status(201).json({
         success: true,

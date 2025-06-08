@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, Clock, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { getUserBookings } from '../../services/bookingService';
+import { getUserBookings, cancelBooking } from '../../services/bookingService';
 import { Booking } from '../../types';
 import Swal from 'sweetalert2';
 
@@ -11,26 +11,69 @@ const UserDashboard: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchBookings = async () => {
-      try {
-        const response = await getUserBookings();
-        if (response.success && response.data) {
-          setBookings(response.data);
-        }
-      } catch (error) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Failed to fetch your bookings',
-        });
-      } finally {
-        setLoading(false);
+  const fetchBookings = async () => {
+    try {
+      const response = await getUserBookings();
+      if (response.success && response.data) {
+        setBookings(response.data);
       }
-    };
+    } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to fetch your bookings',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchBookings();
   }, []);
+
+  // Handle booking cancellation
+  const handleCancelBooking = async (bookingId: string) => {
+    try {
+      const result = await Swal.fire({
+        title: 'Cancel Appointment',
+        text: 'Are you sure you want to cancel this appointment?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, cancel it!',
+        cancelButtonText: 'No, keep it'
+      });
+
+      if (result.isConfirmed) {
+        const response = await cancelBooking(bookingId);
+        
+        if (response.success) {
+          // Refresh the bookings list
+          await fetchBookings();
+          
+          Swal.fire({
+            icon: 'success',
+            title: 'Cancelled!',
+            text: 'Your appointment has been cancelled successfully.',
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: response.error || 'Failed to cancel the appointment',
+          });
+        }
+      }
+    } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'An unexpected error occurred while cancelling the appointment',
+      });
+    }
+  };
 
   // Function to format date
   const formatDate = (dateString: string | Date) => {
@@ -135,7 +178,10 @@ const UserDashboard: React.FC = () => {
                     <div className="mt-2 flex justify-between items-center">
                       <span className="font-medium text-primary-700">₹{booking.price}</span>
                       {booking.status === 'pending' && (
-                        <button className="text-sm text-red-600 hover:text-red-800">
+                        <button 
+                          onClick={() => handleCancelBooking(booking._id!)}
+                          className="text-sm text-red-600 hover:text-red-800"
+                        >
                           Cancel
                         </button>
                       )}
