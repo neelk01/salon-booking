@@ -1,0 +1,14 @@
+
+
+# Ignore .env files
+/frontend/.env
+/backend/.env
+/frontend/node_modules/
+/backend/node_modules/
+.env
+
+# Optional: system/editor junk
+*.log
+.vscode/
+.DS_Store
+Thumbs.db
